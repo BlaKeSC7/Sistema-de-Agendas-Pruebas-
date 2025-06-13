@@ -93,7 +93,7 @@ export const notifyAppointmentCancelled = async (data: WhatsAppMessageData) => {
 export const notifyClientAppointmentConfirmed = async (data: WhatsAppMessageData) => {
   const clientMessage = `✅ *CITA CONFIRMADA* ✅
 
-✂️ *D' Gastón Stylo Barber Shop* ✂️
+✂️ *D' Gastón Stylo Barbería*
 
 ¡Hola ${data.clientName}! Tu cita ha sido confirmada:
 
@@ -120,7 +120,7 @@ export const notifyClientAppointmentConfirmed = async (data: WhatsAppMessageData
 export const notifyClientAppointmentCancelled = async (data: WhatsAppMessageData) => {
   const clientMessage = `❌ *CITA CANCELADA* ❌
 
-✂️ *D' Gastón Stylo Barber Shop* ✂️
+✂️ *D' Gastón Stylo Barbería*
 
 Hola ${data.clientName}, 
 
