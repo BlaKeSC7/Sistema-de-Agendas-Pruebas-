@@ -8,8 +8,18 @@ interface WhatsAppMessageData {
 
 const ADMIN_PHONE = '+18092033894';
 
+// Variable para evitar ejecuciones múltiples
+let isExecuting = false;
+
 // Función para abrir WhatsApp directamente sin confirmación
 export const openWhatsAppWithMessage = (phone: string, message: string) => {
+  // Prevenir ejecuciones múltiples
+  if (isExecuting) return;
+  isExecuting = true;
+  
+  // Reset después de un tiempo
+  setTimeout(() => { isExecuting = false; }, 2000);
+  
   // Limpiar el número de teléfono
   const cleanPhone = phone.replace(/\D/g, '');
   
@@ -19,29 +29,39 @@ export const openWhatsAppWithMessage = (phone: string, message: string) => {
   // Detectar el dispositivo
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
   
-  if (isIOS || isAndroid) {
-    // Para móviles - crear enlace invisible y hacer click real
-    const a = document.createElement('a');
-    a.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMessage}`;
-    a.style.display = 'none';
-    a.rel = 'noopener';
-    
-    document.body.appendChild(a);
-    
-    // Usar setTimeout para asegurar que el click sea procesado como acción del usuario
-    setTimeout(() => {
-      a.click();
-      document.body.removeChild(a);
-    }, 0);
-    
+  if (isMobile) {
+    // Método 1: Usar window.location.href (mejor para iOS)
+    window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMessage}`;
   } else {
     // Para navegadores de escritorio
+    window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`, '_blank', 'noopener,noreferrer');
+  }
+};
+
+// Función alternativa si la principal no funciona
+export const openWhatsAppAlternative = (phone: string, message: string) => {
+  const cleanPhone = phone.replace(/\D/g, '');
+  const encodedMessage = encodeURIComponent(message);
+  
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  
+  if (isIOS || isAndroid) {
+    // Método alternativo: crear enlace y hacer click inmediato SIN setTimeout
+    const a = document.createElement('a');
+    a.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMessage}`;
+    a.target = '_self';
+    
+    // Click inmediato - SIN setTimeout
+    a.click();
+  } else {
     window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`, '_blank');
   }
 };
 
-export const notifyAppointmentCreated = async (data: WhatsAppMessageData) => {
+export const notifyAppointmentCreated = (data: WhatsAppMessageData) => {
   const adminMessage = `🔔 *NUEVA CITA REGISTRADA* 🔔
 
 ✂️ *D' Gastón Stylo Barbería*
@@ -61,11 +81,18 @@ export const notifyAppointmentCreated = async (data: WhatsAppMessageData) => {
     return { success: true };
   } catch (error) {
     console.error('Error abriendo WhatsApp:', error);
-    throw error;
+    // Intentar método alternativo
+    try {
+      openWhatsAppAlternative(ADMIN_PHONE, adminMessage);
+      return { success: true };
+    } catch (altError) {
+      console.error('Error con método alternativo:', altError);
+      throw error;
+    }
   }
 };
 
-export const notifyAppointmentCancelled = async (data: WhatsAppMessageData) => {
+export const notifyAppointmentCancelled = (data: WhatsAppMessageData) => {
   const adminMessage = `❌ *CITA CANCELADA* ❌
 
 ✂️ *D' Gastón Stylo Barbería*
@@ -85,12 +112,19 @@ export const notifyAppointmentCancelled = async (data: WhatsAppMessageData) => {
     return { success: true };
   } catch (error) {
     console.error('Error abriendo WhatsApp:', error);
-    throw error;
+    // Intentar método alternativo
+    try {
+      openWhatsAppAlternative(ADMIN_PHONE, adminMessage);
+      return { success: true };
+    } catch (altError) {
+      console.error('Error con método alternativo:', altError);
+      throw error;
+    }
   }
 };
 
 // Función para notificar al cliente sobre su cita confirmada
-export const notifyClientAppointmentConfirmed = async (data: WhatsAppMessageData) => {
+export const notifyClientAppointmentConfirmed = (data: WhatsAppMessageData) => {
   const clientMessage = `✅ *CITA CONFIRMADA* ✅
 
 ✂️ *D' Gastón Stylo Barbería*
@@ -112,12 +146,18 @@ export const notifyClientAppointmentConfirmed = async (data: WhatsAppMessageData
     return { success: true };
   } catch (error) {
     console.error('Error abriendo WhatsApp:', error);
-    throw error;
+    try {
+      openWhatsAppAlternative(data.clientPhone, clientMessage);
+      return { success: true };
+    } catch (altError) {
+      console.error('Error con método alternativo:', altError);
+      throw error;
+    }
   }
 };
 
 // Función para notificar al cliente sobre cancelación
-export const notifyClientAppointmentCancelled = async (data: WhatsAppMessageData) => {
+export const notifyClientAppointmentCancelled = (data: WhatsAppMessageData) => {
   const clientMessage = `❌ *CITA CANCELADA* ❌
 
 ✂️ *D' Gastón Stylo Barbería*
@@ -140,6 +180,12 @@ Ha sido cancelada.
     return { success: true };
   } catch (error) {
     console.error('Error abriendo WhatsApp:', error);
-    throw error;
+    try {
+      openWhatsAppAlternative(data.clientPhone, clientMessage);
+      return { success: true };
+    } catch (altError) {
+      console.error('Error con método alternativo:', altError);
+      throw error;
+    }
   }
 };
